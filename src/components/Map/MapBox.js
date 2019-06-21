@@ -3,7 +3,6 @@ import React from "react";
 import Map from "./Map";
 
 function MapBox() {
-  console.log(process.env.REACT_APP_API_KEY);
   return (
     <div style={{ height: "80vh", width: "80vw" }}>
       <Map
@@ -13,6 +12,7 @@ function MapBox() {
         loadingElement={<div style={{ height: "100%" }} />}
         containerElement={<div style={{ height: "100%" }} />}
         mapElement={<div style={{ height: "100%" }} />}
+        isMarkerShown
       />
     </div>
   );
