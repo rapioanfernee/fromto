@@ -1,7 +1,6 @@
 import React, { Component } from "react";
 
-import { SearchBox } from "react-google-maps/lib/components/places/SearchBox";
-
+import { StandaloneSearchBox } from "react-google-maps/lib/components/places/StandaloneSearchBox";
 import _ from "lodash";
 
 class SearchBox2 extends Component {
@@ -37,21 +36,18 @@ class SearchBox2 extends Component {
 
   render() {
     return (
-      <SearchBox
+      <StandaloneSearchBox
         ref={this.ref}
         onPlacesChanged={this.onPlacesChanged}
-        controlPosition={4}
       >
         <input
           type="text"
           placeholder={this.props.placeHolder}
           style={{
             boxSizing: `border-box`,
-            border: `1px solid transparent`,
+            border: `1px solid black`,
             width: `20rem`,
             height: `32px`,
-            marginTop: `27px`,
-            marginLeft: `1rem`,
             padding: `0 12px`,
             borderRadius: `3px`,
             boxShadow: `0 2px 6px rgba(0, 0, 0, 0.3)`,
@@ -60,7 +56,7 @@ class SearchBox2 extends Component {
             textOverflow: `ellipses`
           }}
         />
-      </SearchBox>
+      </StandaloneSearchBox>
     );
   }
 }

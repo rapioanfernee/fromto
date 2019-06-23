@@ -1,10 +1,10 @@
 import React from "react";
-import Map from "./Map/MapBox";
+import MapBox from "./Map/MapBox";
 
 const App = () => {
   return (
     <div>
-      <Map />
+      <MapBox />
     </div>
   );
 };

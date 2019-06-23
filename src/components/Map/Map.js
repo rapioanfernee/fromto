@@ -9,6 +9,7 @@ import {
 
 import Directions from "./Directions";
 import SearchBox from "./SearchBox";
+import StandaloneSearchBox from "./StandaloneSearchBox";
 
 import mockAPI from "../../apis/mock";
 
@@ -16,44 +17,18 @@ class Map extends React.Component {
   state = {
     lat: null,
     lng: null,
-    destination: null,
-    origin: null,
-    result: null
+    destination: { name: null },
+    origin: { name: null },
+    result: {
+      path: [],
+      total_distance: null,
+      total_time: null,
+      status: null,
+      error: null
+    },
+    error: null,
+    loading: false
   };
-  constructor(props) {
-    super(props);
-    this.setState({
-      lat: null,
-      lng: null,
-      destination: null,
-      origin: null,
-      result: null
-    });
-  }
-
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      this.state.origin !== null &&
-      this.state.destination !== null &&
-      (prevState.origin !== this.state.origin ||
-        prevState.destination !== this.state.destination)
-    ) {
-      console.log("Fetching");
-      mockAPI
-        .post("/route", {
-          origin: this.state.origin,
-          destination: this.state.destination
-        })
-        .then(res => {
-          console.log(res);
-          mockAPI.get(`/route/${res.data}`).then(res2 => {
-            console.log(res2);
-            this.setState({ ...this.state, result: res2.data });
-          });
-        });
-    }
-    console.log(this.state);
-  }
 
   getPosition = () => {
     return new Promise((res, rej) => {
@@ -62,13 +37,112 @@ class Map extends React.Component {
   };
 
   getOrigin = origin => {
-    console.log(origin);
-    this.setState({ ...this.state, origin: origin.name });
+    this.setState({
+      ...this.state,
+      result: {
+        path: [],
+        total_distance: null,
+        total_time: null,
+        status: null,
+        error: null
+      },
+      origin
+    });
   };
 
   getDestination = destination => {
-    console.log(destination);
-    this.setState({ ...this.state, destination: destination.name });
+    this.setState({
+      ...this.state,
+      result: {
+        path: [],
+        total_distance: null,
+        total_time: null,
+        status: null,
+        error: null
+      },
+      destination
+    });
+  };
+
+  onSubmit = e => {
+    e.preventDefault();
+
+    this.setState({ ...this.state, loading: true });
+
+    this.getRoute();
+  };
+
+  onReset = e => {
+    this.setState({
+      destination: { name: null },
+      origin: { name: null },
+      result: {
+        path: [],
+        total_distance: null,
+        total_time: null,
+        status: null,
+        error: null
+      },
+      error: null,
+      loading: false
+    });
+  };
+
+  getRoute = async () => {
+    this.setState({ ...this.state, loading: true });
+    let responseRoute = { data: { status: null } };
+    let responseToken = null;
+
+    do {
+      try {
+        responseToken = await mockAPI.post("/route", {
+          origin: this.state.origin.name,
+          destination: this.state.destination.name
+        });
+      } catch (error) {
+        responseToken = null;
+      }
+    } while (responseToken === null);
+
+    do {
+      try {
+        responseRoute = await mockAPI.get(`/route/${responseToken.data}`);
+      } catch (error) {
+        responseRoute = { data: { status: null } };
+        console.log("An error occurred");
+      }
+    } while (
+      responseRoute.data.status !== "failure" &&
+      responseRoute.data.status !== "success"
+    );
+
+    this.setState({
+      ...this.state,
+      loading: false,
+      result: responseRoute.data
+    });
+  };
+
+  renderDetails = () => {
+    const { loading, result } = this.state;
+    if (loading) {
+      return <span>Loading...</span>;
+    } else {
+      return (
+        <>
+          <span>{result.status ? result.status : ""}</span>
+          <span>
+            {result.total_distance
+              ? `Total Distance: ${result.total_distance}m`
+              : ""}
+          </span>
+          <span>
+            {result.total_time ? `Total Time: ${result.total_time}m` : ""}
+          </span>
+          <span>{result.error ? result.error : ""}</span>
+        </>
+      );
+    }
   };
 
   render() {
@@ -79,21 +153,72 @@ class Map extends React.Component {
       } = res;
       this.setState({ ...this.state, lat, lng });
     });
-    const { lng, lat } = this.state;
+    const { lng, lat, origin, destination, result } = this.state;
 
     return (
       <>
         {this.state.lat ? (
-          <GoogleMap defaultZoom={13} defaultCenter={{ lat, lng }}>
-            {this.isMarkerShown && <Marker position={{ lat, lng }} />}
-            <Directions
-              origin={{ lat, lng }}
-              destination={{ lat: 14.56335, lng: 120.997589 }}
-            />
+          <>
+            <form
+              onSubmit={this.onSubmit}
+              onReset={this.onReset}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                position: "absolute",
+                top: "20rem",
+                left: "2rem",
+                height: "15rem",
+                justifyContent: "space-between"
+              }}
+            >
+              <label>Starting location</label>
+              <StandaloneSearchBox
+                placeHolder="Set origin"
+                name="origin"
+                getLocation={this.getOrigin}
+              />
+              <label>Drop-off point</label>
+              <StandaloneSearchBox
+                placeHolder="Set destination"
+                name="destination"
+                getLocation={this.getDestination}
+              />
+              {this.renderDetails()}
+              <div>
+                <button
+                  style={{
+                    width: "100px",
+                    height: "25px",
+                    marginRight: "20px"
+                  }}
+                  type="submit"
+                >
+                  Submit
+                </button>
+                <button style={{ width: "100px", height: "25px" }} type="reset">
+                  Reset
+                </button>
+              </div>
+            </form>
 
-            <SearchBox name="origin" getLocation={this.getOrigin} />
-            <SearchBox name="destination" getLocation={this.getDestination} />
-          </GoogleMap>
+            <GoogleMap defaultZoom={12} defaultCenter={{ lat, lng }}>
+              {this.isMarkerShown && <Marker position={{ lat, lng }} />}
+              {origin.name && destination.name && result.total_distance && (
+                <Directions
+                  origin={{
+                    lat: origin.geometry.location.lat(),
+                    lng: origin.geometry.location.lng()
+                  }}
+                  destination={{
+                    lat: destination.geometry.location.lat(),
+                    lng: destination.geometry.location.lng()
+                  }}
+                  directions={result.path}
+                />
+              )}
+            </GoogleMap>
+          </>
         ) : (
           <div>Loading...</div>
         )}
