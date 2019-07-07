@@ -1,12 +1,16 @@
 import React from "react";
 import MapBox from "./Map/MapBox";
+import "bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
 
-const App = () => {
-  return (
-    <div>
-      <MapBox />
-    </div>
-  );
-};
+class App extends React.Component {
+  render() {
+    return (
+      <div>
+        <MapBox />
+      </div>
+    );
+  }
+}
 
 export default App;
